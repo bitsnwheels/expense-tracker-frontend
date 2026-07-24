@@ -32,6 +32,8 @@ function DashboardPage() {
   const [budget, setBudget] = useState(null);
   const [budgetInput, setBudgetInput] = useState('');
   const [budgetDialogOpen, setBudgetDialogOpen] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+const [addingCategory, setAddingCategory] = useState(false);
 
   const fetchExpenses = (categoryName = '', month = '', year = '') => {
     let url = '/expenses';
@@ -143,6 +145,19 @@ console.log('Full response object:', response);
   }
 };
 
+const handleAddCategory = async () => {
+  if (!newCategoryName.trim()) return;
+  try {
+    const response = await api.post('/categories', { name: newCategoryName });
+    setCategories([...categories, response.data]);
+    setCategoryId(response.data.id);
+    setNewCategoryName('');
+    setAddingCategory(false);
+  } catch (err) {
+    console.error('Failed to create category');
+  }
+};
+
   const handleShowGrandTotal = () => {         // ADD THIS FUNCTION
   api.get('/expenses')
     .then((response) => {
@@ -171,7 +186,7 @@ console.log('Full response object:', response);
 
     <Grid container spacing={4}>
       {/* LEFT COLUMN: filters + expense list */}
-      <Grid item xs={12} md={8}>
+      <Grid item xs={12} sm={8}>
         <TextField
           select
           label="Filter by Category"
@@ -275,7 +290,7 @@ console.log('Full response object:', response);
       </Grid>
 
       {/* RIGHT COLUMN: totals sidebar */}
-      <Grid item xs={12} md={4}>
+      <Grid item xs={12} sm={4}>
         <Stack spacing={2} sx={{ position: { md: 'sticky' }, top: { md: 24 } }}>
 
           <Button
@@ -342,20 +357,43 @@ console.log('Full response object:', response);
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
         />
-        <TextField
-          select
-          label="Category"
-          fullWidth
-          margin="normal"
-          value={categoryId}
-          onChange={(e) => setCategoryId(e.target.value)}
-        >
-          {categories.map((cat) => (
-            <MenuItem key={cat.id} value={cat.id}>
-              {cat.name}
-            </MenuItem>
-          ))}
-        </TextField>
+<TextField
+  select
+  label="Category"
+  fullWidth
+  margin="normal"
+  value={categoryId}
+  onChange={(e) => {
+    if (e.target.value === 'ADD_NEW') {
+      setAddingCategory(true);
+    } else {
+      setCategoryId(e.target.value);
+    }
+  }}
+>
+  {categories.map((cat) => (
+    <MenuItem key={cat.id} value={cat.id}>
+      {cat.name}
+    </MenuItem>
+  ))}
+  <MenuItem value="ADD_NEW">
+    <em>+ Add New Category</em>
+  </MenuItem>
+</TextField>
+
+{addingCategory && (
+  <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
+    <TextField
+      label="New Category Name"
+      fullWidth
+      value={newCategoryName}
+      onChange={(e) => setNewCategoryName(e.target.value)}
+    />
+    <Button variant="contained" onClick={handleAddCategory}>
+      Add
+    </Button>
+  </Stack>
+)}
         <TextField
           label="Date"
           type="date"
