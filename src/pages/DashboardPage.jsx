@@ -8,7 +8,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import {
   Box, Card, Typography, CircularProgress, Alert,
   Chip, Stack, Container, Fab, Dialog, DialogTitle,
-  DialogContent, DialogActions, TextField, MenuItem, Button, IconButton, Grid,
+  DialogContent, DialogActions, TextField, MenuItem, Button, IconButton,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow
 } from '@mui/material';
 import NavBar from '../components/NavBar.jsx';
@@ -29,13 +29,14 @@ function DashboardPage() {
   const [total, setTotal] = useState(null);
   const [selectedMonth, setSelectedMonth] = useState('');
   const [selectedYear, setSelectedYear] = useState('');
-  const [grandTotal, setGrandTotal] = useState(null);   
+  const [grandTotal, setGrandTotal] = useState(null);
   const [budget, setBudget] = useState(null);
   const [budgetInput, setBudgetInput] = useState('');
   const [budgetDialogOpen, setBudgetDialogOpen] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
-const [addingCategory, setAddingCategory] = useState(false);
-const [editingExpenseId, setEditingExpenseId] = useState(null);
+  const [addingCategory, setAddingCategory] = useState(false);
+  const [editingExpenseId, setEditingExpenseId] = useState(null);
+  const username = localStorage.getItem('username');
 
   const fetchExpenses = (categoryName = '', month = '', year = '') => {
     let url = '/expenses';
@@ -87,38 +88,38 @@ const [editingExpenseId, setEditingExpenseId] = useState(null);
     }
   }, [selectedMonth, selectedYear]);
 
-const handleOpenDialog = () => {
-  setEditingExpenseId(null);
-  setAmount('');
-  setCategoryId('');
-  setDate('');
-  setNote('');
-  setFormError('');
-  setDialogOpen(true);
-};
+  const handleOpenDialog = () => {
+    setEditingExpenseId(null);
+    setAmount('');
+    setCategoryId('');
+    setDate('');
+    setNote('');
+    setFormError('');
+    setDialogOpen(true);
+  };
 
-const handleSaveExpense = async () => {
-  setFormError('');
-  try {
-    const payload = {
-      amount: parseFloat(amount),
-      categoryId,
-      date,
-      note,
-    };
+  const handleSaveExpense = async () => {
+    setFormError('');
+    try {
+      const payload = {
+        amount: parseFloat(amount),
+        categoryId,
+        date,
+        note,
+      };
 
-    if (editingExpenseId) {
-      await api.put(`/expenses/${editingExpenseId}`, payload);
-    } else {
-      await api.post('/expenses', payload);
+      if (editingExpenseId) {
+        await api.put(`/expenses/${editingExpenseId}`, payload);
+      } else {
+        await api.post('/expenses', payload);
+      }
+
+      setDialogOpen(false);
+      fetchExpenses();
+    } catch (err) {
+      setFormError('Failed to save expense. Check your inputs.');
     }
-
-    setDialogOpen(false);
-    fetchExpenses();
-  } catch (err) {
-    setFormError('Failed to save expense. Check your inputs.');
-  }
-};
+  };
 
   const handleDeleteExpense = async (id) => {
     try {
@@ -142,326 +143,343 @@ const handleSaveExpense = async () => {
   };
 
   const handleUpdateBudget = async () => {
-  try {
-    const response = await api.put('/users/budget', {
-      newMonthlyBudget: parseFloat(budgetInput),
-    });
-    console.log('Budget response:', JSON.stringify(response.data));
-console.log('Full response object:', response);
-    setBudget(response.data.monthlyBudgetLimit);
-    setBudgetDialogOpen(false);
-  } catch (err) {
-    console.error('Failed to update budget');
-  }
-};
-
-const handleAddCategory = async () => {
-  if (!newCategoryName.trim()) return;
-  try {
-    const response = await api.post('/categories', { name: newCategoryName });
-    setCategories([...categories, response.data]);
-    setCategoryId(response.data.id);
-    setNewCategoryName('');
-    setAddingCategory(false);
-  } catch (err) {
-    console.error('Failed to create category');
-  }
-};
-
-const handleOpenEditDialog = (expense) => {
-  setEditingExpenseId(expense.id);
-  setAmount(expense.amount);
-  setCategoryId(expense.category?.id || '');
-  setDate(expense.date);
-  setNote(expense.note || '');
-  setFormError('');
-  setDialogOpen(true);
-};
-
-  const handleShowGrandTotal = () => {         // ADD THIS FUNCTION
-  api.get('/expenses')
-    .then((response) => {
-      const sum = response.data.reduce((acc, exp) => acc + parseFloat(exp.amount), 0);
-      setGrandTotal(sum);
-    })
-    .catch(() => setGrandTotal(null));
-};
-
-  if (loading) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
-        <CircularProgress />
-      </Box>
-    );
-  }
-
- return (
-  <>
-    <NavBar />
-  
-  <Container maxWidth="lg" sx={{ pt: 6, pb: 10 }}>
-    <Typography variant="h4" fontWeight={600} gutterBottom sx={{ mb: 4 }}>
-      Your Expenses
-    </Typography>
-
-    <Grid container spacing={4}>
-      {/* LEFT COLUMN: filters + expense list */}
-      <Grid item xs={12} sm={8}>
-        <TextField
-          select
-          label="Filter by Category"
-          fullWidth
-          sx={{ mb: 3 }}
-          value={selectedCategory}
-          onChange={(e) => handleCategoryChange(e.target.value)}
-        >
-          <MenuItem value="">All Categories</MenuItem>
-          {categories.map((cat) => (
-            <MenuItem key={cat.id} value={cat.name}>
-              {cat.name}
-            </MenuItem>
-          ))}
-        </TextField>
-
-        <Stack direction="row" spacing={2} sx={{ mb: 3 }}>
-          <TextField
-            select
-            label="Month"
-            fullWidth
-            value={selectedMonth}
-            onChange={(e) => handleMonthYearChange(e.target.value, selectedYear)}
-          >
-            <MenuItem value="">Any</MenuItem>
-            {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
-              <MenuItem key={m} value={m}>{m}</MenuItem>
-            ))}
-          </TextField>
-
-          <TextField
-            select
-            label="Year"
-            fullWidth
-            value={selectedYear}
-            onChange={(e) => handleMonthYearChange(selectedMonth, e.target.value)}
-          >
-            <MenuItem value="">Any</MenuItem>
-            {[2024, 2025, 2026].map((y) => (
-              <MenuItem key={y} value={y}>{y}</MenuItem>
-            ))}
-          </TextField>
-        </Stack>
-
-        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-
-
-        <TableContainer component={Card} sx={{ mb: 3 }}>
-  <Table>
-    <TableHead>
-      <TableRow>
-        <TableCell>Amount</TableCell>
-        <TableCell>Category</TableCell>
-        <TableCell>Date</TableCell>
-        <TableCell>Note</TableCell>
-        <TableCell align="right">Actions</TableCell>
-      </TableRow>
-    </TableHead>
-    <TableBody>
-      {expenses.length === 0 ? (
-        <TableRow>
-          <TableCell colSpan={5} align="center">
-            <Typography color="text.secondary" sx={{ py: 3 }}>
-              No expenses yet — add your first one to get started.
-            </Typography>
-          </TableCell>
-        </TableRow>
-      ) : (
-        expenses.map((expense) => (
-          <TableRow key={expense.id} hover>
-            <TableCell>
-              <Typography fontWeight={700} color="primary.main">
-                ₹{expense.amount}
-              </Typography>
-            </TableCell>
-            <TableCell>
-              <Chip
-                icon={<CategoryIcon sx={{ fontSize: 16 }} />}
-                label={expense.category?.name}
-                size="small"
-                sx={{ backgroundColor: 'rgba(127, 90, 240, 0.2)' }}
-              />
-            </TableCell>
-            <TableCell>{expense.date}</TableCell>
-            <TableCell>
-              <Typography variant="body2" color="text.secondary">
-                {expense.note}
-              </Typography>
-            </TableCell>
-
-<TableCell align="right">
-  <IconButton size="small" onClick={() => handleOpenEditDialog(expense)}>
-    <EditIcon fontSize="small" />
-  </IconButton>
-  <IconButton size="small" onClick={() => handleDeleteExpense(expense.id)}>
-    <DeleteIcon fontSize="small" />
-  </IconButton>
-</TableCell>
-          </TableRow>
-        ))
-      )}
-    </TableBody>
-  </Table>
-</TableContainer>
-      </Grid>
-
-      {/* RIGHT COLUMN: totals sidebar */}
-      <Grid item xs={12} sm={4}>
-        <Stack spacing={2} sx={{ position: { md: 'sticky' }, top: { md: 24 } }}>
-
-          <Button
-              variant="outlined"
-              fullWidth
-              onClick={() => setBudgetDialogOpen(true)}
-            >
-              {budget !== null ? `Budget: ₹${budget}` : 'Set Monthly Budget'}
-          </Button>
-          <Button
-            variant="outlined"
-            fullWidth
-            onClick={handleShowGrandTotal}
-          >
-            Show Total Across All Expenses
-          </Button>
-
-{grandTotal !== null && (
-  <Card sx={{ p: 2, textAlign: 'center' }}>
-    <Typography variant="body2" color="text.secondary">
-      Total Across All Expenses
-    </Typography>
-    <Typography variant="h5" fontWeight={700} color="primary.main">
-      ₹{grandTotal.toFixed(2)}
-    </Typography>
-    {budget !== null && grandTotal > budget && (
-      <Alert severity="warning" sx={{ mt: 1 }}>
-        Over budget by ₹{(grandTotal - budget).toFixed(2)}
-      </Alert>
-    )}
-  </Card>
-)}
-
-          {selectedCategory && total !== null && (
-            <Card sx={{ p: 2, textAlign: 'center' }}>
-              <Typography variant="body2" color="text.secondary">
-                Total for {selectedCategory}
-              </Typography>
-              <Typography variant="h5" fontWeight={700} color="primary.main">
-                ₹{total}
-              </Typography>
-            </Card>
-          )}
-        </Stack>
-      </Grid>
-    </Grid>
-
-    <Fab
-      color="primary"
-      sx={{ position: 'fixed', bottom: 32, right: 32 }}
-      onClick={handleOpenDialog}
-    >
-      <AddIcon />
-    </Fab>
-
-    <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} fullWidth maxWidth="xs">
-     <DialogTitle>{editingExpenseId ? 'Edit Expense' : 'Add Expense'}</DialogTitle>
-      <DialogContent>
-        <TextField
-          label="Amount"
-          type="number"
-          fullWidth
-          margin="normal"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-        />
-<TextField
-  select
-  label="Category"
-  fullWidth
-  margin="normal"
-  value={categoryId}
-  onChange={(e) => {
-    if (e.target.value === 'ADD_NEW') {
-      setAddingCategory(true);
-    } else {
-      setCategoryId(e.target.value);
+    try {
+      const response = await api.put('/users/budget', {
+        newMonthlyBudget: parseFloat(budgetInput),
+      });
+      setBudget(response.data.monthlyBudgetLimit);
+      setBudgetDialogOpen(false);
+    } catch (err) {
+      console.error('Failed to update budget');
     }
-  }}
->
-  {categories.map((cat) => (
-    <MenuItem key={cat.id} value={cat.id}>
-      {cat.name}
-    </MenuItem>
-  ))}
-  <MenuItem value="ADD_NEW">
-    <em>+ Add New Category</em>
-  </MenuItem>
-</TextField>
+  };
 
-{addingCategory && (
-  <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
-    <TextField
-      label="New Category Name"
-      fullWidth
-      value={newCategoryName}
-      onChange={(e) => setNewCategoryName(e.target.value)}
-    />
-    <Button variant="contained" onClick={handleAddCategory}>
-      Add
-    </Button>
-  </Stack>
-)}
-        <TextField
-          label="Date"
-          type="date"
-          fullWidth
-          margin="normal"
-          InputLabelProps={{ shrink: true }}
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-        />
-        <TextField
-          label="Note"
-          fullWidth
-          margin="normal"
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-        />
-        {formError && <Alert severity="error" sx={{ mt: 1 }}>{formError}</Alert>}
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
-        <Button variant="contained" onClick={handleSaveExpense}>Save</Button>
-      </DialogActions>
-    </Dialog>
+  const handleAddCategory = async () => {
+    if (!newCategoryName.trim()) return;
+    try {
+      const response = await api.post('/categories', { name: newCategoryName });
+      setCategories([...categories, response.data]);
+      setCategoryId(response.data.id);
+      setNewCategoryName('');
+      setAddingCategory(false);
+    } catch (err) {
+      console.error('Failed to create category');
+    }
+  };
 
-    <Dialog open={budgetDialogOpen} onClose={() => setBudgetDialogOpen(false)} fullWidth maxWidth="xs">
-  <DialogTitle>Set Monthly Budget</DialogTitle>
-  <DialogContent>
-    <TextField
-      label="Monthly Budget"
-      type="number"
-      fullWidth
-      margin="normal"
-      value={budgetInput}
-      onChange={(e) => setBudgetInput(e.target.value)}
-    />
-  </DialogContent>
-  <DialogActions>
-    <Button onClick={() => setBudgetDialogOpen(false)}>Cancel</Button>
-    <Button variant="contained" onClick={handleUpdateBudget}>Save</Button>
-  </DialogActions>
-</Dialog>
-  </Container>
-  </>
-);
+  const handleOpenEditDialog = (expense) => {
+    setEditingExpenseId(expense.id);
+    setAmount(expense.amount);
+    setCategoryId(expense.category?.id || '');
+    setDate(expense.date);
+    setNote(expense.note || '');
+    setFormError('');
+    setDialogOpen(true);
+  };
+
+  const handleShowGrandTotal = () => {
+    api.get('/expenses')
+      .then((response) => {
+        const sum = response.data.reduce((acc, exp) => acc + parseFloat(exp.amount), 0);
+        setGrandTotal(sum);
+      })
+      .catch(() => setGrandTotal(null));
+  };
+
+if (loading) {
+  return (
+    <Box
+      sx={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+      }}
+    >
+      <CircularProgress />
+    </Box>
+  );
+}
+
+  return (
+    <>
+      <NavBar />
+
+      <Container maxWidth="lg" sx={{ pt: 6, pb: 10 }}>
+      <Typography variant="h4" fontWeight={600} gutterBottom sx={{ mb: 1 }}>
+        Hi, {username || 'there'}
+      </Typography>
+
+
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: { xs: '1fr', md: 'minmax(0, 2fr) minmax(280px, 1fr)' },
+            gap: 4,
+          }}
+        >
+          {/* LEFT COLUMN: filters + expense list */}
+          <Box>
+            <TextField
+              select
+              label="Filter by Category"
+              fullWidth
+              sx={{ mb: 3 }}
+              value={selectedCategory}
+              onChange={(e) => handleCategoryChange(e.target.value)}
+            >
+              <MenuItem value="">All Categories</MenuItem>
+              {categories.map((cat) => (
+                <MenuItem key={cat.id} value={cat.name}>
+                  {cat.name}
+                </MenuItem>
+              ))}
+            </TextField>
+
+            <Stack direction="row" spacing={2} sx={{ mb: 3 }}>
+              <TextField
+                select
+                label="Month"
+                fullWidth
+                value={selectedMonth}
+                onChange={(e) => handleMonthYearChange(e.target.value, selectedYear)}
+              >
+                <MenuItem value="">Any</MenuItem>
+                {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+                  <MenuItem key={m} value={m}>{m}</MenuItem>
+                ))}
+              </TextField>
+
+              <TextField
+                select
+                label="Year"
+                fullWidth
+                value={selectedYear}
+                onChange={(e) => handleMonthYearChange(selectedMonth, e.target.value)}
+              >
+                <MenuItem value="">Any</MenuItem>
+                {[2024, 2025, 2026].map((y) => (
+                  <MenuItem key={y} value={y}>{y}</MenuItem>
+                ))}
+              </TextField>
+            </Stack>
+
+            {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+
+            <TableContainer component={Card} sx={{ mb: 3 }}>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Amount</TableCell>
+                    <TableCell>Category</TableCell>
+                    <TableCell>Date</TableCell>
+                    <TableCell>Note</TableCell>
+                    <TableCell align="right" sx={{ minWidth: 96 }}>Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {expenses.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} align="center">
+                        <Typography color="text.secondary" sx={{ py: 3 }}>
+                          No expenses yet — add your first one to get started.
+                        </Typography>
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    expenses.map((expense) => (
+                      <TableRow key={expense.id} hover>
+                        <TableCell>
+                          <Typography fontWeight={700} color="primary.main">
+                            ₹{expense.amount}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Chip
+                            icon={<CategoryIcon sx={{ fontSize: 16 }} />}
+                            label={expense.category?.name}
+                            size="small"
+                            sx={{ backgroundColor: 'rgba(127, 90, 240, 0.2)' }}
+                          />
+                        </TableCell>
+                        <TableCell>{expense.date}</TableCell>
+                        <TableCell sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          <Typography variant="body2" color="text.secondary">
+                            {expense.note}
+                          </Typography>
+                        </TableCell>
+                        <TableCell align="right" sx={{ minWidth: 96 }}>
+                          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5, flexWrap: 'nowrap' }}>
+                            <IconButton size="small" onClick={() => handleOpenEditDialog(expense)}>
+                              <EditIcon fontSize="small" />
+                            </IconButton>
+                            <IconButton size="small" onClick={() => handleDeleteExpense(expense.id)}>
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </Box>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Box>
+
+          {/* RIGHT COLUMN: totals sidebar */}
+          <Box>
+            <Stack spacing={2} sx={{ position: { md: 'sticky' }, top: { md: 24 } }}>
+              <Button
+                variant="outlined"
+                fullWidth
+                onClick={() => setBudgetDialogOpen(true)}
+              >
+                {budget !== null ? `Budget: ₹${budget}` : 'Set Monthly Budget'}
+              </Button>
+
+              <Button
+                variant="outlined"
+                fullWidth
+                onClick={handleShowGrandTotal}
+              >
+                Show Total Across All Expenses
+              </Button>
+
+              {grandTotal !== null && (
+                <Card sx={{ p: 2, textAlign: 'center' }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Total Across All Expenses
+                  </Typography>
+                  <Typography variant="h5" fontWeight={700} color="primary.main">
+                    ₹{grandTotal.toFixed(2)}
+                  </Typography>
+                  {budget !== null && grandTotal > budget && (
+                    <Alert severity="warning" sx={{ mt: 1 }}>
+                      Over budget by ₹{(grandTotal - budget).toFixed(2)}
+                    </Alert>
+                  )}
+                </Card>
+              )}
+
+              {selectedCategory && total !== null && (
+                <Card sx={{ p: 2, textAlign: 'center' }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Total for {selectedCategory}
+                  </Typography>
+                  <Typography variant="h5" fontWeight={700} color="primary.main">
+                    ₹{total}
+                  </Typography>
+                </Card>
+              )}
+            </Stack>
+          </Box>
+        </Box>
+
+        <Fab
+          color="primary"
+          sx={{ position: 'fixed', bottom: 32, right: 32 }}
+          onClick={handleOpenDialog}
+        >
+          <AddIcon />
+        </Fab>
+
+        <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} fullWidth maxWidth="xs">
+          <DialogTitle>{editingExpenseId ? 'Edit Expense' : 'Add Expense'}</DialogTitle>
+          <DialogContent>
+            <TextField
+              label="Amount"
+              type="number"
+              fullWidth
+              margin="normal"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+            />
+            <TextField
+              select
+              label="Category"
+              fullWidth
+              margin="normal"
+              value={categoryId}
+              onChange={(e) => {
+                if (e.target.value === 'ADD_NEW') {
+                  setAddingCategory(true);
+                } else {
+                  setCategoryId(e.target.value);
+                }
+              }}
+            >
+              {categories.map((cat) => (
+                <MenuItem key={cat.id} value={cat.id}>
+                  {cat.name}
+                </MenuItem>
+              ))}
+              <MenuItem value="ADD_NEW">
+                <em>+ Add New Category</em>
+              </MenuItem>
+            </TextField>
+
+            {addingCategory && (
+              <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
+                <TextField
+                  label="New Category Name"
+                  fullWidth
+                  value={newCategoryName}
+                  onChange={(e) => setNewCategoryName(e.target.value)}
+                />
+                <Button variant="contained" onClick={handleAddCategory}>
+                  Add
+                </Button>
+              </Stack>
+            )}
+
+            <TextField
+              label="Date"
+              type="date"
+              fullWidth
+              margin="normal"
+              InputLabelProps={{ shrink: true }}
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+            />
+            <TextField
+              label="Note"
+              fullWidth
+              margin="normal"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+            />
+            {formError && <Alert severity="error" sx={{ mt: 1 }}>{formError}</Alert>}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
+            <Button variant="contained" onClick={handleSaveExpense}>Save</Button>
+          </DialogActions>
+        </Dialog>
+
+        <Dialog open={budgetDialogOpen} onClose={() => setBudgetDialogOpen(false)} fullWidth maxWidth="xs">
+          <DialogTitle>Set Monthly Budget</DialogTitle>
+          <DialogContent>
+            <TextField
+              label="Monthly Budget"
+              type="number"
+              fullWidth
+              margin="normal"
+              value={budgetInput}
+              onChange={(e) => setBudgetInput(e.target.value)}
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setBudgetDialogOpen(false)}>Cancel</Button>
+            <Button variant="contained" onClick={handleUpdateBudget}>Save</Button>
+          </DialogActions>
+        </Dialog>
+      </Container>
+    </>
+  );
 }
 
 export default DashboardPage;

@@ -53,8 +53,8 @@
 body {
   margin: 0;
   min-height: 100vh;
-  background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
-  background-attachment: fixed;
+background: linear-gradient(135deg, #3a3a45, #4e4e5c, #6b6b7a, #4a4a58);
+background-attachment: fixed;
 }
 
 #root {
