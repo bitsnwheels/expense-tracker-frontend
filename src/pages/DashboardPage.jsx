@@ -4,6 +4,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import CategoryIcon from '@mui/icons-material/Category';
 import api from '../api/axiosInstance.js';
+import EditIcon from '@mui/icons-material/Edit';
 import {
   Box, Card, Typography, CircularProgress, Alert,
   Chip, Stack, Container, Fab, Dialog, DialogTitle,
@@ -34,6 +35,7 @@ function DashboardPage() {
   const [budgetDialogOpen, setBudgetDialogOpen] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
 const [addingCategory, setAddingCategory] = useState(false);
+const [editingExpenseId, setEditingExpenseId] = useState(null);
 
   const fetchExpenses = (categoryName = '', month = '', year = '') => {
     let url = '/expenses';
@@ -85,30 +87,38 @@ const [addingCategory, setAddingCategory] = useState(false);
     }
   }, [selectedMonth, selectedYear]);
 
-  const handleOpenDialog = () => {
-    setAmount('');
-    setCategoryId('');
-    setDate('');
-    setNote('');
-    setFormError('');
-    setDialogOpen(true);
-  };
+const handleOpenDialog = () => {
+  setEditingExpenseId(null);
+  setAmount('');
+  setCategoryId('');
+  setDate('');
+  setNote('');
+  setFormError('');
+  setDialogOpen(true);
+};
 
-  const handleCreateExpense = async () => {
-    setFormError('');
-    try {
-      await api.post('/expenses', {
-        amount: parseFloat(amount),
-        categoryId,
-        date,
-        note,
-      });
-      setDialogOpen(false);
-      fetchExpenses();
-    } catch (err) {
-      setFormError('Failed to create expense. Check your inputs.');
+const handleSaveExpense = async () => {
+  setFormError('');
+  try {
+    const payload = {
+      amount: parseFloat(amount),
+      categoryId,
+      date,
+      note,
+    };
+
+    if (editingExpenseId) {
+      await api.put(`/expenses/${editingExpenseId}`, payload);
+    } else {
+      await api.post('/expenses', payload);
     }
-  };
+
+    setDialogOpen(false);
+    fetchExpenses();
+  } catch (err) {
+    setFormError('Failed to save expense. Check your inputs.');
+  }
+};
 
   const handleDeleteExpense = async (id) => {
     try {
@@ -156,6 +166,16 @@ const handleAddCategory = async () => {
   } catch (err) {
     console.error('Failed to create category');
   }
+};
+
+const handleOpenEditDialog = (expense) => {
+  setEditingExpenseId(expense.id);
+  setAmount(expense.amount);
+  setCategoryId(expense.category?.id || '');
+  setDate(expense.date);
+  setNote(expense.note || '');
+  setFormError('');
+  setDialogOpen(true);
 };
 
   const handleShowGrandTotal = () => {         // ADD THIS FUNCTION
@@ -276,11 +296,15 @@ const handleAddCategory = async () => {
                 {expense.note}
               </Typography>
             </TableCell>
-            <TableCell align="right">
-              <IconButton size="small" onClick={() => handleDeleteExpense(expense.id)}>
-                <DeleteIcon fontSize="small" />
-              </IconButton>
-            </TableCell>
+
+<TableCell align="right">
+  <IconButton size="small" onClick={() => handleOpenEditDialog(expense)}>
+    <EditIcon fontSize="small" />
+  </IconButton>
+  <IconButton size="small" onClick={() => handleDeleteExpense(expense.id)}>
+    <DeleteIcon fontSize="small" />
+  </IconButton>
+</TableCell>
           </TableRow>
         ))
       )}
@@ -347,7 +371,7 @@ const handleAddCategory = async () => {
     </Fab>
 
     <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} fullWidth maxWidth="xs">
-      <DialogTitle>Add Expense</DialogTitle>
+     <DialogTitle>{editingExpenseId ? 'Edit Expense' : 'Add Expense'}</DialogTitle>
       <DialogContent>
         <TextField
           label="Amount"
@@ -414,7 +438,7 @@ const handleAddCategory = async () => {
       </DialogContent>
       <DialogActions>
         <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
-        <Button variant="contained" onClick={handleCreateExpense}>Save</Button>
+        <Button variant="contained" onClick={handleSaveExpense}>Save</Button>
       </DialogActions>
     </Dialog>
 

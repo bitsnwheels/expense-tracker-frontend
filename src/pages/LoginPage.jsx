@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Box, Card, TextField, Button, Typography, Alert } from '@mui/material';
+import { useNavigate, Link } from 'react-router-dom';
 import api from '../api/axiosInstance.js';
 
 function LoginPage() {
@@ -22,12 +22,19 @@ function LoginPage() {
   };
 
   return (
-    <Box
-      display="flex"
-      justifyContent="center"
-      alignItems="center"
-      minHeight="100vh"
-    >
+<Box
+  sx={{
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+  }}
+>
+
       <Card sx={{ padding: 4, width: 350 }}>
         <Typography variant="h5" gutterBottom>
           Login
@@ -57,6 +64,10 @@ function LoginPage() {
           >
             Log In
           </Button>
+
+          <Typography variant="body2" align="center" sx={{ mt: 2 }}>
+              Don't have an account? <Link to="/register">Register</Link>
+          </Typography>
         </form>
       </Card>
     </Box>
